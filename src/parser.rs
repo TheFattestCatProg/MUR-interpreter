@@ -6,7 +6,7 @@ use crate::vm::{CellType, Op, PosType};
 
 enum Meta {
     Op(Rc<String>, LinkedList<MetaArg>, Position),
-    Label(Rc<String>),
+    Label(Rc<String>, Position),
 }
 
 enum MetaArg {
@@ -81,8 +81,8 @@ impl Parser {
                 Token::Eof            => return Ok(meta_list),
 
                 Token::Op(name, pos) => meta_list.push_back(Meta::Op(name, parse_op_args(&mut self.lexer)?, pos)),
-                Token::Label(name, _) => { 
-                    meta_list.push_back(Meta::Label(name));
+                Token::Label(name, pos) => { 
+                    meta_list.push_back(Meta::Label(name, pos));
 
                     match self.lexer.next() {
                         Token::NewLine(_) => (),
@@ -102,7 +102,11 @@ impl Parser {
         for i in meta.iter() {
             match i {
                 Meta::Op(_, _, _) => op_counter += 1,
-                Meta::Label(name) => { env.labels.insert(Rc::clone(name), op_counter); },
+                Meta::Label(name, pos) => {
+                    if let Some(_) = env.labels.insert(Rc::clone(name), op_counter) {
+                        return Err(format!("{} Label @{} is already declared", pos.str(), name));
+                    }
+                },
             }
         }
 
@@ -233,7 +237,7 @@ impl Parser {
 
         for m in meta.iter() {
             match m {
-                Meta::Label(_) => (),
+                Meta::Label(_, _) => (),
                 Meta::Op(name, args, pos) => {
                     let op = to_op(&mut env, name, args, pos)?;
                     env.code.push_back(op);

@@ -105,7 +105,13 @@ impl Lexer {
             return;
         }
 
-        let line = line_buffer.trim();
+        let mut line = line_buffer.as_str();
+
+        if let Some(i) = line.find('#') {
+            line = &line[..i];
+        }
+
+        line = line.trim();
         self.line += 1;
 
         let mut word_no = 1;

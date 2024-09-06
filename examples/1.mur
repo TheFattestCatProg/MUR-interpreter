@@ -1,99 +1,91 @@
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
-inc %x
+jmp %1 %1 @main
 
-out %x
+##### x = x + y #####
+zer %sum_i
+
+@sum_loop_1
+jmp %sum_i %y @sum_exit_1
+    inc %x
+    inc %sum_i
+
+    jmp %1 %1 @sum_loop_1
+
+@sum_exit_1
+####################
+
+##### x = x - 1 #####
+zer %dec_i
+inc %dec_i
+
+zer %dec_res
+
+@dec_loop_1
+jmp %dec_i %x @dec_exit_1
+    inc %dec_res
+    inc %dec_i
+
+    jmp %1 %1 @dec_loop_1
+
+@dec_exit_1
+mov %x %dec_res
+#####################
+
+@main
+
+inc %C5
+inc %C5
+inc %C5
+inc %C5
+inc %C5
+
+zer %res
+
+zer %k
+@loop3
+
+jmp %k %C5 @exit3
+
+    zer %j
+    @loop2
+
+    jmp %j %C5 @exit2
+
+        zer %i
+        @loop1
+
+        jmp %i %C5 @exit1
+
+            inc %res
+
+        inc %i
+        jmp %i %i @loop1
+        @exit1
+
+    inc %j
+    jmp %j %j @loop2
+    @exit2
+
+inc %k
+jmp %k %k @loop3
+@exit3
+
+# in %res now 125
+out %res
+
+mov %x %res
+zer %y
+inc %y
+
+zer %sum_i
+
+@sum_loop_2
+jmp %sum_i %y @sum_exit_2
+    inc %x
+    inc %sum_i
+
+    jmp %1 %1 @sum_loop_2
+
+@sum_exit_2
+
+mov %res %x # now 126
+out %res
