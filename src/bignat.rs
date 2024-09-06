@@ -3,7 +3,7 @@ type NatBase = u64;
 
 #[derive(Clone, PartialEq, Eq)]
 struct Node {
-    value: NatBase,
+    pub value: NatBase,
     next: Option<Box<Node>>
 }
 
@@ -52,5 +52,10 @@ impl BigNat {
 
     pub fn zero(&mut self) {
         self.begin = Node::zero();
+    }
+
+    pub fn print(&self) {
+        let c = char::from_u32(self.begin.value as u32).unwrap();
+        print!("{}", c); // TODO: if greater not print
     }
 }

@@ -150,7 +150,7 @@ impl Parser {
                         },
                     };
 
-                    Op::ZERO(reg)
+                    Op::Zero(reg)
                 },
                 "inc" => {
                     let reg = match iter.next() {
@@ -161,7 +161,18 @@ impl Parser {
                         },
                     };
 
-                    Op::INC(reg)
+                    Op::Inc(reg)
+                },
+                "out" => {
+                    let reg = match iter.next() {
+                        None => return expected_argument(pos),
+                        Some(m) => match m {
+                            MetaArg::Register(name, _) => reg_to_num(env, name),
+                            MetaArg::Label(name, pos) => return expected_register(name, pos),
+                        },
+                    };
+
+                    Op::Out(reg)
                 },
                 "mov" => {
                     let reg1 = match iter.next() {
@@ -179,7 +190,7 @@ impl Parser {
                         },
                     };
 
-                    Op::MOV(reg1, reg2)
+                    Op::Mov(reg1, reg2)
                 },
                 "jmp" => {
                     let reg1 = match iter.next() {
@@ -205,7 +216,7 @@ impl Parser {
                     };
 
 
-                    Op::JMP(reg1, reg2, label)
+                    Op::Jmp(reg1, reg2, label)
                 },
                 other => return Err(format!("{} Bad command '{}'", pos.str(), other))
             };

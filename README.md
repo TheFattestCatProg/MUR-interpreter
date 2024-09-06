@@ -13,5 +13,6 @@ This project realizes such machine in ***Rust***.
 
 Features:
 -
-- [ ] Basic 4 operations
+- [x] Basic 4 operations
+- [x] Out operator
 - [ ] Custom operations

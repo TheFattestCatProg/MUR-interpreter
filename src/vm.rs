@@ -5,10 +5,11 @@ pub type PosType = usize;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Op {
-    ZERO(CellType),
-    INC(CellType),
-    MOV(CellType, CellType),
-    JMP(CellType, CellType, PosType) // r1, r2, label
+    Zero(CellType),
+    Inc(CellType),
+    Mov(CellType, CellType),
+    Jmp(CellType, CellType, PosType), // r1, r2, label
+    Out(CellType),
 }
 
 struct Env {
@@ -49,10 +50,11 @@ pub fn execute(code: Vec<Op>) {
 
     while ip < code.len() {
         match code[ip] {
-            Op::ZERO(r) => env.reg_mut(r).zero(),
-            Op::INC(r) => env.reg_mut(r).increment(),
-            Op::MOV(r1, r2) => *env.reg_mut(r1) = env.reg(r2).clone(),
-            Op::JMP(r1, r2, new_ip) => if env.reg(r1) == env.reg(r2) { ip = new_ip - 1; },
+            Op::Zero(r) => env.reg_mut(r).zero(),
+            Op::Inc(r) => env.reg_mut(r).increment(),
+            Op::Mov(r1, r2) => *env.reg_mut(r1) = env.reg(r2).clone(),
+            Op::Jmp(r1, r2, new_ip) => if env.reg(r1) == env.reg(r2) { ip = new_ip - 1; },
+            Op::Out(r) => env.reg(r).print(),
         }
 
         ip += 1;
