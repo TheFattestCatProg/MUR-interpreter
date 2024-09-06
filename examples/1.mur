@@ -1,0 +1,13 @@
+inc %x
+inc %x
+inc %x
+
+zer %y
+
+@loop
+jmp %x %y @exit
+inc %y
+jmp %x %x @loop
+
+@exit
+inc %z
