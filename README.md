@@ -4,15 +4,15 @@ Overview
 ***Turing Machine*** and ***Lambda Calculus***.
 
 **MUR** have 4 basic operations:
-- Set zero **(zer %R)**
-- Add one **(inc %R)**
-- Move value from one register to other **(mov %R1 %R2)**
-- Conditional jump == **(jmp %R1 %R2 @M)**
+- Set zero **(zer %R)** (%R = 0)
+- Add one **(inc %R)** (%R += 1)
+- Move value from one register to other **(mov %R1 %R2)** (%R1 <- %R2)
+- Conditional jump **(jmp %R1 %R2 @M)** (if %R1 == %R2 goto @M)
 
 This project realizes such machine in ***Rust***.
 
 Features:
 -
 - [x] Basic 4 operations
-- [x] Out operator
-- [ ] Custom operations
+- [x] **out %R** operator
+- [ ] Macro
