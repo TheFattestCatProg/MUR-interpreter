@@ -1,0 +1,27 @@
+
+macro repeat N code {
+    zer %.i
+
+    @.loop
+
+    jmp %.i N @.out
+        code %.i
+        inc %.i
+
+        jmp %.i %.i @.loop
+
+    @.out
+}
+
+macro sum X Y {
+    repeat Y { i | inc X; }
+}
+
+inc %x
+inc %x
+inc %x
+
+inc %y
+inc %y
+
+sum %x %y

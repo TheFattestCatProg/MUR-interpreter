@@ -15,4 +15,4 @@ Features:
 -
 - [x] Basic 4 operations
 - [x] **out %R** operator
-- [ ] Macro
+- [x] Macro

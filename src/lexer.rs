@@ -1,36 +1,58 @@
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::collections::LinkedList;
+use std::io::{self, BufRead};
 use std::rc::Rc;
+use std::{fs::File, io::BufReader};
+use std::collections::LinkedList;
+use regex::Regex;
 
-type PosType = u32;
+const COMMENT_CHAR: char = '#';
 
-#[derive(Clone, Copy)]
-pub struct Position {
-    pub line: PosType,
-    pub word: PosType,
+pub type LexPosType = u32;
+pub type LexStr = Rc<String>;
+
+#[derive(Clone, Copy, Debug)]
+pub struct LexPos {
+    line: LexPosType,
+    sym: LexPosType
 }
 
-impl Position {
-    pub fn new(line: PosType, word: PosType) -> Self {
-        Position {
+impl LexPos {
+    pub fn new(line: LexPosType, sym: LexPosType) -> Self {
+        LexPos {
             line: line,
-            word: word
+            sym: sym
         }
     }
 
     pub fn str(&self) -> String {
-        return format!("{}:{}", self.line, self.word);
+        format!("{}:{}", self.line, self.sym)
+    }
+
+    pub fn line(&self) -> LexPosType {
+        self.line
+    }
+
+    pub fn sym(&self) -> LexPosType {
+        self.sym
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum Token {
     None,
     Eof,
-    NewLine(PosType), // line
-    Register(Rc<String>, Position),
-    Label(Rc<String>, Position),
-    Op(Rc<String>, Position)
+    NewLine(LexPos), // line
+
+    Dot(LexPos),
+    At(LexPos),
+    Percent(LexPos),
+    BrOpen(LexPos),
+    BrClose(LexPos),
+    Pipe(LexPos),
+    
+    Macro(LexPos),
+
+    Id(LexStr, LexPos),
+    Unknown(LexPos),
 }
 
 impl Token {
@@ -39,46 +61,46 @@ impl Token {
             Token::None => String::from("?:?"),
             Token::Eof => String::from("-1:-1"),
 
-            Token::NewLine(line) => format!("{}:-1", line),
-
-            Token::Register(_, pos)
-            | Token::Label(_, pos)
-            | Token::Op(_, pos)  => format!("{}:{}", pos.line, pos.word),
+            Token::NewLine(pos)
+            | Token::Dot(pos)
+            | Token::At(pos)
+            | Token::Percent(pos)
+            | Token::BrOpen(pos)
+            | Token::BrClose(pos)
+            | Token::Pipe(pos)
+            | Token::Macro(pos)
+            | Token::Id(_, pos)
+            | Token::Unknown(pos) => format!("{}:{}", pos.line(), pos.sym()),
         }
     }
 
     pub fn str(&self) -> String {
         match self {
-            Token::None       => String::from("None"),
-            Token::Eof        => String::from("EOF"),
+            Token::None => String::from("None"),
+            Token::Eof => String::from("EOF"),
             Token::NewLine(_) => String::from("NewLine"),
-
-            Token::Register(name, _) => format!("Reg(%{})", name),
-            Token::Label(name, _)    => format!("Lab(@{})", name),
-            Token::Op(name, _)       => format!("Op({})", name),
+            Token::Unknown(_) => String::from("Unknown"),
+            Token::Dot(_) => String::from("'.'"),
+            Token::At(_) => String::from("'@'"),
+            Token::BrOpen(_) => String::from("'{'"),
+            Token::BrClose(_) => String::from("'}'"),
+            Token::Pipe(_) => String::from("'|'"),
+            Token::Percent(_) => String::from("'%'"),
+            Token::Macro(_) => String::from("'macro'"),
+            Token::Id(name, _) => format!("Id({})", name),
         }
     }
 }
 
-impl Clone for Token {
-    fn clone(&self) -> Self {
-        match self {
-            Self::None => Self::None,
-            Self::Eof => Self::Eof,
-            Self::NewLine(line) => Self::NewLine(*line),
-            Self::Register(name, pos) => Self::Register(Rc::clone(name), *pos),
-            Self::Label(name, pos)    => Self::Label(Rc::clone(name), *pos),
-            Self::Op(name, pos)       => Self::Op(Rc::clone(name), *pos),
-        }
-    }
-}
 
 pub struct Lexer {
     file_reader: BufReader<File>,
     token_buffer: LinkedList<Token>, // read whole line and place to buffer
-    line: PosType,
+    line: LexPosType,
 
     curr_token: Token,
+
+    id_regex: Regex,
 }
 
 impl Lexer {
@@ -89,78 +111,107 @@ impl Lexer {
             line: 0,
 
             curr_token: Token::None,
+
+            id_regex: Regex::new("^[0-9a-zA-Z_]+").unwrap(),
         })
     }
 
     fn read_line(&mut self) {
         let mut line_buffer = String::new();
 
-        if let Err(_) = self.file_reader.read_line(&mut line_buffer) {
-            self.token_buffer.push_back( Token::Eof );
-            return;
-        }
+        self.file_reader.read_line(&mut line_buffer).unwrap();
 
         if line_buffer.is_empty() {
-            self.token_buffer.push_back( Token::Eof );
+            self.token_buffer.push_back(Token::Eof);
             return;
-        }
+        };       
 
         let mut line = line_buffer.as_str();
-
-        if let Some(i) = line.find('#') {
+        if let Some(i) = line.find(COMMENT_CHAR) {
             line = &line[..i];
         }
 
-        line = line.trim();
         self.line += 1;
+        let mut sym_no = 1;
 
-        let mut word_no = 1;
-
-        for word in line.split_ascii_whitespace().into_iter() {
-            if word.starts_with('@') {
-                self.token_buffer.push_back(
-                    Token::Label(
-                        Rc::new(String::from( &word[1..] )), 
-                        Position::new(self.line, word_no) 
-                    ) 
-                );
+        while !line.is_empty() {
+            if line.starts_with(' ') || line.starts_with('\t') || line.starts_with('\n')  {
+                sym_no += 1;
+                line = &line[1..];
             }
-            else if word.starts_with('%') {
-                self.token_buffer.push_back(
-                    Token::Register(
-                        Rc::new(String::from( &word[1..] )),
-                        Position::new(self.line, word_no)
-                    )
-                );
+            else if line.starts_with(';') {
+                self.token_buffer.push_back(Token::NewLine(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('.') {
+                self.token_buffer.push_back(Token::Dot(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('@') {
+                self.token_buffer.push_back(Token::At(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('%') {
+                self.token_buffer.push_back(Token::Percent(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('{') {
+                self.token_buffer.push_back(Token::BrOpen(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('}') {
+                self.token_buffer.push_back(Token::BrClose(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('|') {
+                self.token_buffer.push_back(Token::Pipe(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if let Some(caps) = self.id_regex.captures(line) {
+                let id = &caps[0];
+                let pos = LexPos::new(self.line, sym_no);
+
+                match id {
+                    "macro" => self.token_buffer.push_back(Token::Macro(pos)),
+                    other => self.token_buffer.push_back(Token::Id( Rc::new(String::from(other)), pos ))
+                }
+
+                let d = id.len();
+                sym_no += d as u32;
+                line = &line[d..];
             }
             else {
-                self.token_buffer.push_back(
-                    Token::Op(
-                        Rc::new(String::from(word)),
-                        Position::new(self.line, word_no)
-                    )
-                );
+                self.token_buffer.push_back(Token::Unknown(LexPos::new(self.line, sym_no)));
+                return;
             }
-
-            word_no += 1;
         }
 
-        self.token_buffer.push_back( Token::NewLine(self.line) );
+        self.token_buffer.push_back(Token::NewLine(LexPos::new(self.line, sym_no)));
     }
 
     pub fn next(&mut self) -> Token {
-        if let Some(tok) = self.token_buffer.pop_front() {
-            self.curr_token = tok;
+        loop {
+            let r = self.token_buffer.pop_front();
 
-            return self.curr();
+            match r {
+                Some(tok) => {
+                    self.curr_token = tok;
+                    break;
+                },
+                None => {
+                    self.read_line();
+                },
+            }
         }
-
-        self.read_line();
-
-        let tok = self.token_buffer.pop_front().unwrap();
-        self.curr_token = tok;
         
-        return self.curr();
+        self.curr()
     }
 
     pub fn curr(&self) -> Token {
