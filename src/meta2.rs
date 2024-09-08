@@ -5,7 +5,6 @@ use std::rc::Rc;
 
 use crate::lexer::{LexPos, LexStr};
 use crate::meta::{CodeMeta, IsLocal, MacroData, Meta, MetaArg, MetaArgs};
-use crate::util::as_linked;
 use crate::vm::CellType;
 
 struct ViewSpace<T, V> {
@@ -369,10 +368,14 @@ fn expand_macro(env: &mut Env, param: ParamType, name: LexStr, args: &mut IntoIt
 
     env.push_level(macr, reps);
 
-    let to_ret = code.into_iter().flat_map(| i | match i {
-        Meta::Op(name, op_args, op_pos) => process_op(env, inner_param, name, op_args, op_pos).unwrap(),
-        Meta::Lab(name, is_local, pos) => as_linked(Meta2::Lab(MetaId::new(name, if is_local { inner_param } else { PARAM_GLOBAL } ), pos)),
-    }).collect::<CodeMeta2>();
+    let mut to_ret = CodeMeta2::new();
+
+    for i in code.into_iter() {
+        match i {
+            Meta::Op(name, op_args, op_pos) => to_ret.append(&mut process_op(env, inner_param, name, op_args, op_pos)?),
+            Meta::Lab(name, is_local, pos) => to_ret.push_back(Meta2::Lab(MetaId::new(name, if is_local { inner_param } else { PARAM_GLOBAL } ), pos))
+        }
+    }
 
     env.pop_level();
 

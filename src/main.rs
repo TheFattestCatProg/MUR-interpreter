@@ -1,4 +1,3 @@
-mod util;
 mod lexer;
 mod meta;
 mod meta2;
@@ -11,7 +10,7 @@ use parser::Parser;
 use vm::execute;
 
 fn main() {
-    let lexer = Lexer::new("examples/2.mur").unwrap();
+    let lexer = Lexer::new("examples/3.mur").unwrap();
     let mut parser = Parser::new(lexer);
     match parser.parse() {
         Ok(code) => execute(code),

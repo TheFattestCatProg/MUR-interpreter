@@ -1,0 +1,52 @@
+macro rep N code {
+    zer %.i
+
+    @.loop
+
+    jmp %.i N @.out
+        code %.i
+        inc %.i
+
+        jmp %.i %.i @.loop
+
+    @.out
+}
+
+macro repSince S N code {
+    mov %.i S
+
+    @.loop
+
+    jmp %.i N @.out
+        code %.i
+        inc %.i
+
+        jmp %.i %.i @.loop
+
+    @.out
+}
+
+macro sum X Y {
+    rep Y { i | inc X; }
+}
+
+macro dec X {
+    zer %.0
+
+    zer %.1
+    inc %.1
+
+    zer %.res
+
+    jmp X %.0 @.out
+        repSince %.1 X { i | inc %.res; }
+        mov X %.res
+
+    @.out
+}
+
+macro sub X Y {
+    rep Y { i | dec %.res; }
+}
+
+sub %x %y
