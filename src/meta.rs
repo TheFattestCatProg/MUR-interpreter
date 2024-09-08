@@ -4,10 +4,11 @@ use std::rc::Rc;
 use crate::lexer::{LexPos, LexStr, Lexer, Token};
 
 pub type IsLocal = bool;
+pub type NonLocalSearch = bool;
 
 #[derive(Debug, Clone)]
 pub enum MetaArg {
-    Reg(LexStr, IsLocal, LexPos),
+    Reg(LexStr, IsLocal, NonLocalSearch, LexPos),
     Lab(LexStr, IsLocal, LexPos),
     Id(LexStr, LexPos),
     Code(LinkedList<LexStr>, CodeMeta, LexPos),
@@ -16,7 +17,7 @@ pub enum MetaArg {
 impl MetaArg {
     pub fn pos_str(&self) -> String {
         match self {
-            MetaArg::Reg(_, _, pos)
+            MetaArg::Reg(_, _, _, pos)
             | MetaArg::Lab(_, _, pos)
             | MetaArg::Id(_, pos)
             | MetaArg::Code(_, _, pos) => pos.str(),
@@ -25,7 +26,7 @@ impl MetaArg {
 
     pub fn str(&self) -> String {
         match self {
-            MetaArg::Reg(name, is_local, _) => format!("%{}{}", if *is_local { "." } else { "" }, name),
+            MetaArg::Reg(name, is_local, search, _) => format!("%{}{}{}", if *is_local { "." } else { "" }, if *search { "\\" } else { "" }, name),
             MetaArg::Lab(name, is_local, _) => format!("@{}{}", if *is_local { "." } else { "" }, name),
             MetaArg::Id(name, _) => format!("Id:{}", name),
             MetaArg::Code(_, _, _) => String::from("{...code...}"),
@@ -55,14 +56,19 @@ fn bad_token(tok: Token) -> String {
 
 fn parse_arg_reg(lexer: &mut Lexer) -> Result<MetaArg, String> {
     match lexer.next() {       
-        Token::Id(name, pos) => return Ok(MetaArg::Reg(name, false, pos)),
-        Token::Dot(_) => (),
+        Token::Id(name, pos) => return Ok(MetaArg::Reg(name, false, false, pos)),
+        Token::Dot(_) => match lexer.next() {
+            Token::Id(name, pos) => Ok(MetaArg::Reg(name, true, false, pos)),
+            tok => Err(bad_token(tok)),
+        },
+        Token::InvSlash(_) => match lexer.next() {
+            Token::Dot(_) => match lexer.next() {
+                Token::Id(name, pos) => Ok(MetaArg::Reg(name, true, true, pos)),
+            tok => Err(bad_token(tok)),
+            },
+            tok => Err(bad_token(tok))
+        }
         tok => return Err(bad_token(tok)),
-    }
-
-    match lexer.next() {        
-        Token::Id(name, pos) => Ok(MetaArg::Reg(name, true, pos)),
-        tok => Err(bad_token(tok)),
     }
 }
 

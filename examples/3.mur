@@ -1,3 +1,7 @@
+macro jmpA M {
+    jmp %._ %._ M
+}
+
 macro rep N code {
     zer %.i
 
@@ -7,7 +11,7 @@ macro rep N code {
         code %.i
         inc %.i
 
-        jmp %.i %.i @.loop
+        jmpA @.loop
 
     @.out
 }
@@ -21,7 +25,7 @@ macro repSince S N code {
         code %.i
         inc %.i
 
-        jmp %.i %.i @.loop
+        jmpA @.loop
 
     @.out
 }
@@ -39,14 +43,44 @@ macro dec X {
     zer %.res
 
     jmp X %.0 @.out
-        repSince %.1 X { i | inc %.res; }
+
+        repSince %.1 X { i | inc %\.res; } # use outer-scope %.res
         mov X %.res
 
     @.out
 }
 
 macro sub X Y {
-    rep Y { i | dec %.res; }
+    rep Y { i | dec X; }
 }
 
-sub %x %y
+macro init {
+    zer %0
+    zer %1
+    inc %1
+
+    mov %2 %1
+    inc %2
+
+    mov %5 %2
+    sum %5 %2
+    sum %5 %1
+
+    mov %10 %5
+    sum %10 %5
+}
+
+
+
+macro main {
+    mov %.x %5
+    mov %.y %2
+
+    sub %.x %.y
+
+    out %.x
+}
+
+
+init
+main

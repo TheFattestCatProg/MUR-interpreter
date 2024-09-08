@@ -48,6 +48,7 @@ pub enum Token {
     BrOpen(LexPos),
     BrClose(LexPos),
     Pipe(LexPos),
+    InvSlash(LexPos),
     
     Macro(LexPos),
 
@@ -68,6 +69,7 @@ impl Token {
             | Token::BrOpen(pos)
             | Token::BrClose(pos)
             | Token::Pipe(pos)
+            | Token::InvSlash(pos)
             | Token::Macro(pos)
             | Token::Id(_, pos)
             | Token::Unknown(pos) => format!("{}:{}", pos.line(), pos.sym()),
@@ -85,6 +87,7 @@ impl Token {
             Token::BrOpen(_) => String::from("'{'"),
             Token::BrClose(_) => String::from("'}'"),
             Token::Pipe(_) => String::from("'|'"),
+            Token::InvSlash(_) => String::from("'\\'"),
             Token::Percent(_) => String::from("'%'"),
             Token::Macro(_) => String::from("'macro'"),
             Token::Id(name, _) => format!("Id({})", name),
@@ -171,6 +174,11 @@ impl Lexer {
             }
             else if line.starts_with('|') {
                 self.token_buffer.push_back(Token::Pipe(LexPos::new(self.line, sym_no)));
+                sym_no += 1;
+                line = &line[1..];
+            }
+            else if line.starts_with('\\') {
+                self.token_buffer.push_back(Token::InvSlash(LexPos::new(self.line, sym_no)));
                 sym_no += 1;
                 line = &line[1..];
             }

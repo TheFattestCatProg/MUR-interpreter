@@ -4,7 +4,7 @@ use std::hash::Hash;
 use std::rc::Rc;
 
 use crate::lexer::{LexPos, LexStr};
-use crate::meta::{CodeMeta, IsLocal, MacroData, Meta, MetaArg, MetaArgs};
+use crate::meta::{CodeMeta, IsLocal, MacroData, Meta, MetaArg, MetaArgs, NonLocalSearch};
 use crate::vm::CellType;
 
 struct ViewSpace<T, V> {
@@ -155,10 +155,17 @@ impl Env {
         return self.next_param;
     }
 
-    pub fn get_reg(&mut self, name: LexStr, is_local: IsLocal) -> CellType {
+    pub fn get_reg(&mut self, name: LexStr, is_local: IsLocal, non_local_search: NonLocalSearch) -> CellType {
         if is_local {
-            if let Some(r) = self.reg_space.find_top(&name) {
-                return *r;
+            if non_local_search {
+                if let Some(r) = self.reg_space.find(&name) {
+                    return *r;
+                }
+            }
+            else {
+                if let Some(r) = self.reg_space.find_top(&name) {
+                    return *r;
+                }
             }
         }
         else {
@@ -239,7 +246,7 @@ fn process_label(name: LexStr, deep_level: ParamType, pos: LexPos) -> Meta2 {
 
 fn arg_to_meta(env: &mut Env, param: ParamType, meta: MetaArg) -> Result<(Meta2Arg, LexPos), String> {
     match meta {
-        MetaArg::Reg(name, is_local, pos) => Ok(( Meta2Arg::Reg(env.get_reg(name, is_local)), pos )),
+        MetaArg::Reg(name, is_local, nls,  pos) => Ok(( Meta2Arg::Reg(env.get_reg(name, is_local, nls)), pos )),
         MetaArg::Lab(name, is_local, pos) => Ok(( Meta2Arg::Lab(MetaId::new(name, if is_local { param } else { PARAM_GLOBAL } )), pos )),
         MetaArg::Id(name, pos) => match env.replace(&name) {
             None => Err(format!("{} Cannot expand '{}'", pos.str(), name)),
@@ -344,8 +351,8 @@ fn expand_macro(env: &mut Env, param: ParamType, name: LexStr, args: &mut IntoIt
         match args.next() {
             None => return Err(expected_arg(pos)),
             Some(arg) => match arg {
-                MetaArg::Reg(name, is_local, _) => {
-                    reps.insert(Rc::clone(i), Meta2Arg::Reg( env.get_reg(name, is_local) ));
+                MetaArg::Reg(name, is_local, nls, _) => {
+                    reps.insert(Rc::clone(i), Meta2Arg::Reg( env.get_reg(name, is_local, nls) ));
                 },
                 MetaArg::Lab(name, is_local, _) => {
                     reps.insert(Rc::clone(i), Meta2Arg::Lab( MetaId::new(name, if is_local { param } else { PARAM_GLOBAL } ) ));
