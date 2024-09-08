@@ -437,7 +437,7 @@ pub fn print_meta2(meta: &CodeMeta2) {
             Meta2::Inc(r) => println!("inc %{}", *r),
             Meta2::Out(r) => println!("out %{}", *r),
             Meta2::Mov(r1, r2) => println!("mov %{} %{}", *r1, *r2),
-            Meta2::Jmp(r1, r2, l, _) => println!("jmp %{} %{} %{}_{}", *r1, *r2, l.id(), l.param()),
+            Meta2::Jmp(r1, r2, l, _) => println!("jmp %{} %{} @{}_{}", *r1, *r2, l.id(), l.param()),
         }
     }
 }

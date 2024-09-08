@@ -1,5 +1,5 @@
 macro jmpA M {
-    jmp %._ %._ M
+    jmp %0 %0 M
 }
 
 macro rep N code {
@@ -54,6 +54,19 @@ macro sub X Y {
     rep Y { i | dec X; }
 }
 
+macro less X Y FALSE_LAB {
+    jmp X Y @.false
+
+    mov %.x X
+
+    sub %.x Y
+    jmp %.x %0 @.true
+
+    @.false
+        jmpA FALSE_LAB
+    @.true
+}
+
 macro init {
     zer %0
     zer %1
@@ -73,12 +86,16 @@ macro init {
 
 
 macro main {
-    mov %.x %5
-    mov %.y %2
+    mov %.x %2
+    mov %.y %5
 
-    sub %.x %.y
+    less %.x %.y @.false
+        out %1
+        jmpA @.out
+    @.false
+        out %0
 
-    out %.x
+    @.out
 }
 
 
