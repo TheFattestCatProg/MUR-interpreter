@@ -58,14 +58,13 @@ impl Parser {
         Ok(to_meta2(meta_res.code, meta_res.macros)?)
     }
 
-    /*pub fn print_debug(&mut self) -> Result<(), String> {
+    pub fn print_debug(&mut self) -> Result<(), String> {
         print_meta2(&self.parse_meta2()?);
         Ok(())
-    }*/
+    }
 
     pub fn parse(&mut self) -> Result<Vec<Op>, String> {
         let meta2 = self.parse_meta2()?;
-        print_meta2(&meta2);
         meta2_to_vm(meta2)
     }
 }

@@ -1,4 +1,4 @@
-use std::io::{self, BufRead};
+use std::io::BufRead;
 use std::rc::Rc;
 use std::{fs::File, io::BufReader};
 use std::collections::LinkedList;
@@ -107,16 +107,16 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(path: &str) -> io::Result<Self> {
-        Ok(Lexer {
-            file_reader: BufReader::new(File::open(path)?),
+    pub fn new(file: File) -> Self {
+        Lexer {
+            file_reader: BufReader::new(file),
             token_buffer: LinkedList::new(),
             line: 0,
 
             curr_token: Token::None,
 
             id_regex: Regex::new("^[0-9a-zA-Z_]+").unwrap(),
-        })
+        }
     }
 
     fn read_line(&mut self) {

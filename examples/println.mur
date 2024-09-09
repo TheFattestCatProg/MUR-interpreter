@@ -1,7 +1,5 @@
 macro main {
-    mov %.x %10
-
-    print10ln %.x
+    print10ln %10
 }
 
 macro init {

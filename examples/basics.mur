@@ -69,7 +69,7 @@ inc %k
 jmp %k %k @loop3
 @exit3
 
-# in %res now 125
+# in %res now 125, }
 out %res
 
 mov %x %res
@@ -87,5 +87,5 @@ jmp %sum_i %y @sum_exit_2
 
 @sum_exit_2
 
-mov %res %x # now 126
+mov %res %x # now 126, ~
 out %res

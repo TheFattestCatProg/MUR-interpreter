@@ -17,3 +17,9 @@ Features:
 - [x] Basic 4 operations
 - [x] `out %R` operator
 - [x] Macro
+
+Use:
+-
+To run `cargo run --release -- file/path.mur`.
+
+To view full macro expansion `cargo run --release -- file/path.mur -m`.
