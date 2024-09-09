@@ -21,5 +21,4 @@ Features:
 Use:
 -
 To run `cargo run --release -- file/path.mur`.
-
 To view full macro expansion `cargo run --release -- file/path.mur -m`.
