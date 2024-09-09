@@ -16,7 +16,7 @@ fn meta2_to_vm(meta2: LinkedList<Meta2>) -> Result<Vec<Op>, String> {
         match i {
             Meta2::Lab(name, pos) => {
                 if let Some(_) = labels_pos.insert(name, op_pointer) {
-                    return Err(format!("{} Label '{}' is already defined", pos.str(), name.id()))
+                    return Err(format!("{} Label '{}{}' is already defined", pos.str(), if name.param() != 0 { "." } else { "" }, name.id()))
                 }
             },
             _ => op_pointer += 1,
@@ -34,7 +34,7 @@ fn meta2_to_vm(meta2: LinkedList<Meta2>) -> Result<Vec<Op>, String> {
             Meta2::Mov(r1, r2) => vec.push(Op::Mov(*r1, *r2)),
             Meta2::Jmp(r1, r2, l, pos) => {
                 let Some(v) = labels_pos.get(&l) else {
-                    return Err(format!("{} Label '{}' not found", pos.str(), l.id()))
+                    return Err(format!("{} Label '{}{}' not found", pos.str(), if l.param() != 0 { "." } else { "" }, l.id()))
                 };
 
                 vec.push(Op::Jmp(*r1, *r2, *v));
